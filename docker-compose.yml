@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  mariadb1:
+    build:
+      context: ./mariadb
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel_password
+    volumes:
+      - mariadb1_data:/var/lib/mysql
+    networks:
+      - laravel_cluster_network
+    command: >
+      --wsrep-new-cluster
+      --wsrep-node-address=mariadb1
+      --wsrep-cluster-address=gcomm://mariadb1,mariadb2,mariadb3
+
+  mariadb2:
+    build:
+      context: ./mariadb
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel_password
+    volumes:
+      - mariadb2_data:/var/lib/mysql
+    networks:
+      - laravel_cluster_network
+    depends_on:
+      - mariadb1
+    command: >
+      --wsrep-node-address=mariadb2
+      --wsrep-cluster-address=gcomm://mariadb1,mariadb2,mariadb3
+
+  mariadb3:
+    build:
+      context: ./mariadb
+      dockerfile: Dockerfile
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: laravel
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: laravel_password
+    volumes:
+      - mariadb3_data:/var/lib/mysql
+    networks:
+      - laravel_cluster_network
+    depends_on:
+      - mariadb1
+      - mariadb2
+    command: >
+      --wsrep-node-address=mariadb3
+      --wsrep-cluster-address=gcomm://mariadb1,mariadb2,mariadb3
+
+  laravel1:
+    build:
+      context: ./laravel
+      dockerfile: Dockerfile
+    volumes:
+      - ./laravel:/var/www/html
+      - ./laravel1/.env:/var/www/html/.env
+    environment:
+      - DB_HOST=mariadb1
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=laravel_password
+    ports:
+      - 8001:80
+    networks:
+      - laravel_cluster_network
+    depends_on:
+      - mariadb1
+      - mariadb2
+      - mariadb3
+    command: php -S 0.0.0.0:80 -t /var/www/html/public
+
+  laravel2:
+    build:
+      context: ./laravel
+      dockerfile: Dockerfile
+    volumes:
+      - ./laravel:/var/www/html
+      - ./laravel2/.env:/var/www/html/.env
+    environment:
+      - DB_HOST=mariadb2
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=laravel_password
+    ports:
+      - 8002:80
+    networks:
+      - laravel_cluster_network
+    depends_on:
+      - mariadb1
+      - mariadb2
+      - mariadb3
+    command: php -S 0.0.0.0:80 -t /var/www/html/public
+
+  laravel3:
+    build:
+      context: ./laravel
+      dockerfile: Dockerfile
+    volumes:
+      - ./laravel:/var/www/html
+      - ./laravel3/.env:/var/www/html/.env
+    environment:
+      - DB_HOST=mariadb3
+      - DB_DATABASE=laravel
+      - DB_USERNAME=laravel
+      - DB_PASSWORD=laravel_password
+    ports:
+      - 8003:80
+    networks:
+      - laravel_cluster_network
+    depends_on:
+      - mariadb1
+      - mariadb2
+      - mariadb3
+    command: php -S 0.0.0.0:80 -t /var/www/html/public
+
+volumes:
+  mariadb1_data:
+  mariadb2_data:
+  mariadb3_data:
+
+networks:
+  laravel_cluster_network:
+    driver: bridge
