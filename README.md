@@ -47,3 +47,11 @@ http://127.0.0.1:8001
 http://127.0.0.1:8002
 http://127.0.0.1:8003
 ```
+
+
+## Si ocupas correr NPM
+
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+nvm install node
+```
