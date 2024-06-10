@@ -33,3 +33,12 @@ o
 docker exec -it {nombreContenedor} php artisan serve
 ```
 
+## Revisar conexión del cluster de mariadb
+
+Para revisar la conexión del cluster de mariadb, se debe ejecutar los siguientes comando en cualquiera de los contenedores de mariadb:
+
+```bash
+mariadb -u laravel -p
+laravel_password
+SHOW STATUS LIKE 'wsrep_cluster_size';
+```
