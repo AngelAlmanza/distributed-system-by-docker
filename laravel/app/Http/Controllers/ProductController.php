@@ -24,6 +24,8 @@ class ProductController extends Controller
     {
         //
 
+        return view('products.create');
+
     }
 
     /**
@@ -31,8 +33,28 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'name' => 'required',
+            'description' => 'required',
+            'price' => 'required',
+            'stock' => 'required',
+            'base64_image' => 'required',
+        ]);
+
+        $imageData = $request->base64_image;
+
+        Product::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'price' => $request->price,
+            'stock' => $request->stock,
+            'image' => $imageData,
+            'user_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('products.index')->with('success', 'Product created successfully.');
     }
+
 
     /**
      * Display the specified resource.
@@ -40,6 +62,8 @@ class ProductController extends Controller
     public function show(Product $product)
     {
         //
+
+        return view('products.show', compact('product'));
     }
 
     /**
@@ -48,6 +72,11 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         //
+
+        if ($product->user_id !== auth()->id()) {
+            return redirect()->route('products.index')->with('error', 'You are not authorized to edit this product.');
+        }
+        return view('products.edit', compact('product'));
     }
 
     /**
@@ -56,6 +85,18 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         //
+
+        $request->validate([
+            'name' => 'required',
+            'description' => 'required',
+            'price' => 'required',
+            'stock' => 'required',
+            'image' => 'required',
+        ]);
+
+        $product->update($request->all());
+
+        return redirect()->route('products.index')->with('success', 'Product updated successfully.');
     }
 
     /**
@@ -64,5 +105,9 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         //
+        if($product->user_id !== auth()->id()) {
+            return redirect()->route('products.index')->with('error', 'You are not authorized to delete this product.');
+        }
+        $product->delete();
     }
 }
